@@ -26,19 +26,18 @@ public abstract class PacketHandler {
       public void run() {
         try {
           while(true) {
-            byte[] dataAwaiting = new byte[512];
+            byte[] dataAwaiting = new byte[30008];
             final DatagramPacket receivedDatagram = new DatagramPacket(dataAwaiting,
                     dataAwaiting.length);
 
-            log("Awaiting data");
+            log("Awaiting data...");
             datagramSocket.receive(receivedDatagram);
-            log("data received");
+            log("Datagram received");
 
             // Resolving the client request on a detached thread.
             Thread resolver = new Thread() {
               public void run() {
                 try {
-                  log("data will be resolved now on a new thread");
                   resolveDatagram(receivedDatagram);
                 } catch(Exception e) { }
               }
@@ -49,13 +48,24 @@ public abstract class PacketHandler {
       }
     };
     this.udpThread.start();
-    log("Thread is up!");
   }
 
-  private void resolveDatagram(DatagramPacket receivedDatagram) {
+  private void resolveDatagram(DatagramPacket receivedDatagram) throws IOException {
     byte[] b = receivedDatagram.getData();
     Packet receivedPacket = new Packet(b);
-    log("## " + receivedPacket.getBody());
+
+    if(receivedPacket.getType() == Packet.PacketType.DATA) {
+      new ImageViewer("Received in " + name, (byte[])receivedPacket.getBody());
+      Packet respondPacket = new Packet(Packet.PacketType.SIGNAL, receivedPacket.getPacketNumber(),
+              Signal.PACKET_RECEIVED);
+      sendPacket(respondPacket, receivedDatagram.getAddress(), receivedDatagram.getPort());
+    }
+  }
+
+  private void respond(Packet receivedPacket) {
+    Packet respondPacket = new Packet(Packet.PacketType.SIGNAL, receivedPacket.getPacketNumber(),
+            Signal.PACKET_RECEIVED);
+
   }
 
   public void sendPacket(Packet packet, InetAddress inetAddress, int port) throws IOException {
@@ -65,7 +75,7 @@ public abstract class PacketHandler {
             inetAddress,
             port);
     datagramSocket.send(sendPacket);
-    log("Data sent");
+    log("Datagram sent");
   }
 
   public void log(String l) {
@@ -74,5 +84,6 @@ public abstract class PacketHandler {
             Thread.currentThread().getId(),
             Thread.currentThread().getName(),
             l));
+//    System.out.println("Alive threads: " + Thread.activeCount());
   }
 }

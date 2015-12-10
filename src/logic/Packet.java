@@ -1,6 +1,7 @@
 package logic;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * Created by ahmedatef on 11/29/15.
@@ -40,7 +41,7 @@ public class Packet {
 
     switch(packetType) {
       case DATA:
-        byte[] stringData = body.toString().getBytes();
+        byte[] stringData = (byte[])body;
         length += stringData.length;
         data = stringData;
         break;
@@ -70,14 +71,13 @@ public class Packet {
     ByteBuffer bb = ByteBuffer.wrap(raw);
     short length = bb.getShort();
     PacketType packetType = PacketType.values()[bb.getShort()];
-    System.out.println(packetType);
     int packetNumber = bb.getInt();
 
     Object body = null;
 
     switch(packetType) {
       case DATA:
-        body = new String(raw, HEADER_LENGTH, length - HEADER_LENGTH);
+        body = Arrays.copyOfRange(raw, HEADER_LENGTH, length);
         break;
       case SIGNAL:
         body = Signal.values()[(ByteBuffer.wrap(raw, HEADER_LENGTH, 2).getShort())];

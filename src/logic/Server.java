@@ -10,5 +10,4 @@ public class Server extends PacketHandler {
   public Server(int udpPort) throws SocketException {
     super(new DatagramSocket(udpPort), "Server");
   }
-
 }
