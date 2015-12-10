@@ -14,11 +14,6 @@ import java.util.Arrays;
  */
 public class Packet {
 
-  public enum PacketType {
-    SIGNAL,
-    DATA
-  }
-
   private short length;
   private PacketType type;
   private int packetNumber;
@@ -26,6 +21,10 @@ public class Packet {
   private byte[] raw;
 
   private static final short HEADER_LENGTH = 8;
+
+//  public Packet(PacketType type, Object body) {
+//    new Packet(type, -1, body);
+//  }
 
   public Packet(PacketType type, int packetNumber, Object body) {
     encode(type, packetNumber, body);

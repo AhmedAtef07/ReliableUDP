@@ -3,10 +3,8 @@ package logic;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,8 +22,8 @@ public class ImageViewer {
   }
 
   public ImageViewer(final String title, byte[] data) throws IOException {
-    InputStream in = new ByteArrayInputStream(data);
-    final BufferedImage bi = ImageIO.read(in);
+//    InputStream in = new ByteArrayInputStream(data);
+//    final BufferedImage bi = ImageIO.read(in);
 
     java.awt.EventQueue.invokeLater(new Runnable() {
       public void run() {
@@ -34,7 +32,7 @@ public class ImageViewer {
         frame.setSize(new Dimension(500, 500));       //Sets the dimensions of panel to appear when run
         frame.setResizable(false);
 
-        imagePane = new ImagePane(bi);
+        imagePane = new ImagePane();
         frame.add(imagePane);
 
         frame.setVisible(true);
@@ -49,11 +47,11 @@ public class ImageViewer {
   private class ImagePane extends JPanel {
     public JLabel l;
 
-    public ImagePane(BufferedImage bufferedImage) {
+    public ImagePane() {
       setLayout(new BorderLayout());
       ImageIcon icon = null;
       try {
-        icon = new ImageIcon(bufferedImage);
+        icon = new ImageIcon();
       } catch (Exception e) {
         e.printStackTrace();
       }

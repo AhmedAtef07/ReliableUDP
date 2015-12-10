@@ -50,32 +50,48 @@ public abstract class PacketHandler {
     this.udpThread.start();
   }
 
-  private void resolveDatagram(DatagramPacket receivedDatagram) throws IOException {
-    byte[] b = receivedDatagram.getData();
-    Packet receivedPacket = new Packet(b);
+  public abstract void resolveDatagram (DatagramPacket receivedDatagram) throws IOException;
+//  public void resolveDatagram(DatagramPacket receivedDatagram) throws IOException {
+//    byte[] b = receivedDatagram.getData();
+//    Packet receivedPacket = new Packet(b);
+//
+//    if(receivedPacket.getType() == Packet.PacketType.DATA) {
+//      respond(receivedDatagram, receivedPacket);
+//    }
+//  }
 
-    if(receivedPacket.getType() == Packet.PacketType.DATA) {
-      new ImageViewer("Received in " + name, (byte[])receivedPacket.getBody());
-      Packet respondPacket = new Packet(Packet.PacketType.SIGNAL, receivedPacket.getPacketNumber(),
-              Signal.PACKET_RECEIVED);
-      sendPacket(respondPacket, receivedDatagram.getAddress(), receivedDatagram.getPort());
-    }
+  public void respond(DatagramPacket receivedDatagram, Packet newPacket) throws IOException {
+//    new ImageViewer("Received in " + name, (byte[])receivedPacket.getBody());
+    sendPacket(newPacket, receivedDatagram.getAddress(), receivedDatagram.getPort());
   }
 
-  private void respond(Packet receivedPacket) {
-    Packet respondPacket = new Packet(Packet.PacketType.SIGNAL, receivedPacket.getPacketNumber(),
+  public void ackResponse(DatagramPacket receivedDatagram, Packet receivedPacket)
+          throws IOException {
+    Packet respondPacket = new Packet(PacketType.SIGNAL, receivedPacket.getPacketNumber(),
             Signal.PACKET_RECEIVED);
-
+    sendPacket(respondPacket, receivedDatagram.getAddress(), receivedDatagram.getPort());
   }
 
   public void sendPacket(Packet packet, InetAddress inetAddress, int port) throws IOException {
+    try {
+      Thread.sleep(200);
+    } catch(InterruptedException e) {
+      e.printStackTrace();
+    }
     DatagramPacket sendPacket = new DatagramPacket(
             packet.getRaw(),
             packet.getRaw().length,
             inetAddress,
             port);
+
     datagramSocket.send(sendPacket);
-    log("Datagram sent");
+
+    log(String.format("Datagram sent to %s:%d of type %s and length %d. Content: %s",
+            inetAddress.getHostAddress(),
+            port,
+            packet.getType(),
+            packet.getRaw().length,
+            packet.getBody().toString()));
   }
 
   public void log(String l) {
@@ -85,5 +101,9 @@ public abstract class PacketHandler {
             Thread.currentThread().getName(),
             l));
 //    System.out.println("Alive threads: " + Thread.activeCount());
+  }
+
+  public String getName() {
+    return name;
   }
 }
