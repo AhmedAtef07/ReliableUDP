@@ -1,7 +1,5 @@
 package logic;
 
-import java.net.DatagramPacket;
-import java.net.InetAddress;
 import java.nio.ByteBuffer;
 
 /**
@@ -59,23 +57,18 @@ public class Packet {
     ByteBuffer byteBuffer = ByteBuffer.allocate(length);
 
     byteBuffer.putShort(length);
-    System.out.println("Encoded as length: " + length);
     byteBuffer.putShort((short)packetType.ordinal());
-    System.out.println("ordinal ==> " + packetType + " " + (short)packetType.ordinal());
     byteBuffer.putInt(packetNumber);
     byteBuffer.put(data);
 
     raw = byteBuffer.array();
-    System.out.println("raw length encoded: " + raw.length);
+
     setLocalVariables(length, packetType, packetNumber, body, raw);
   }
 
   private void decode(byte[] raw) {
-    System.out.println("raw length received: " + raw.length);
-
     ByteBuffer bb = ByteBuffer.wrap(raw);
     short length = bb.getShort();
-    System.out.println("Decoded as length: " + length);
     PacketType packetType = PacketType.values()[bb.getShort()];
     System.out.println(packetType);
     int packetNumber = bb.getInt();
@@ -121,17 +114,6 @@ public class Packet {
 
   public byte[] getRaw() {
     return raw;
-  }
-
-  public void sendPacketTo(PacketHandler packetHandler, InetAddress inetAddress, int port) {
-    DatagramPacket sendPacket = new DatagramPacket(
-            this.getRaw(),
-            this.getRaw().length,
-            inetAddress,
-            port);
-
-//    packetHandler.send(sendPacket);
-    System.out.println("Some packet sent to a client");
   }
 }
 
