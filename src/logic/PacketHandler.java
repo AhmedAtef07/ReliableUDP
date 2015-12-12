@@ -9,6 +9,8 @@ import java.net.InetAddress;
  * Created by ahmedatef on 12/6/15.
  */
 public abstract class PacketHandler {
+  public static int CHUNK_SIZE = 4 * 1024;
+
   private Thread udpThread;
 
   private DatagramSocket datagramSocket;
@@ -26,7 +28,7 @@ public abstract class PacketHandler {
       public void run() {
         try {
           while(true) {
-            byte[] dataAwaiting = new byte[30008];
+            byte[] dataAwaiting = new byte[CHUNK_SIZE + Packet.HEADER_LENGTH];
             final DatagramPacket receivedDatagram = new DatagramPacket(dataAwaiting,
                     dataAwaiting.length);
 
@@ -60,24 +62,24 @@ public abstract class PacketHandler {
 //    }
 //  }
 
-  public void respond(DatagramPacket receivedDatagram, Packet newPacket) throws IOException {
+  public synchronized void respond(DatagramPacket receivedDatagram, Packet newPacket) throws IOException {
 //    new ImageViewer("Received in " + name, (byte[])receivedPacket.getBody());
     sendPacket(newPacket, receivedDatagram.getAddress(), receivedDatagram.getPort());
   }
 
-  public void ackResponse(DatagramPacket receivedDatagram, Packet receivedPacket)
+  public synchronized void ackResponse(DatagramPacket receivedDatagram, Packet receivedPacket)
           throws IOException {
     Packet respondPacket = new Packet(PacketType.SIGNAL, receivedPacket.getPacketNumber(),
             Signal.PACKET_RECEIVED);
     sendPacket(respondPacket, receivedDatagram.getAddress(), receivedDatagram.getPort());
   }
 
-  public void sendPacket(Packet packet, InetAddress inetAddress, int port) throws IOException {
-    try {
-      Thread.sleep(200);
-    } catch(InterruptedException e) {
-      e.printStackTrace();
-    }
+  public synchronized void sendPacket(Packet packet, InetAddress inetAddress, int port) throws IOException {
+//    try {
+//      Thread.sleep(1000);
+//    } catch(InterruptedException e) {
+//      e.printStackTrace();
+//    }
     DatagramPacket sendPacket = new DatagramPacket(
             packet.getRaw(),
             packet.getRaw().length,
@@ -94,7 +96,7 @@ public abstract class PacketHandler {
             packet.getBody().toString()));
   }
 
-  public void log(String l) {
+  public synchronized void log(String l) {
     System.out.println(String.format("%s(%d, %s) => %s",
             name,
             Thread.currentThread().getId(),
@@ -103,7 +105,7 @@ public abstract class PacketHandler {
 //    System.out.println("Alive threads: " + Thread.activeCount());
   }
 
-  public String getName() {
+  public synchronized String getName() {
     return name;
   }
 }

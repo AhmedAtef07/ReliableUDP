@@ -20,7 +20,7 @@ public class Packet {
   private Object body;
   private byte[] raw;
 
-  private static final short HEADER_LENGTH = 8;
+  public static final short HEADER_LENGTH = 8;
 
 //  public Packet(PacketType type, Object body) {
 //    new Packet(type, -1, body);

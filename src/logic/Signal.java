@@ -4,7 +4,7 @@ package logic;
  * Created by ahmedatef on 11/29/15.
  */
 public enum Signal {
-  SHAKE_HANK_PACKET,
+  SHAKEHAND_PACKET,
   REQUEST_PACKET_RETRANSMISSION,
   REQUEST_IMAGE,
   STARTING_IMAGE_TRANSMISSION,

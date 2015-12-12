@@ -30,7 +30,7 @@ public class Client extends PacketHandler {
   }
 
   private void sendShakeHandPacketToServer() throws IOException {
-    sendPacket(new Packet(PacketType.SIGNAL, 0, Signal.SHAKE_HANK_PACKET), serverAddress, port);
+    sendPacket(new Packet(PacketType.SIGNAL, 0, Signal.SHAKEHAND_PACKET), serverAddress, port);
   }
 
   public void requestImageFromServer() throws IOException {
@@ -69,7 +69,7 @@ public class Client extends PacketHandler {
   }
 
   @Override
-  public void resolveDatagram(DatagramPacket receivedDatagram) throws IOException {
+  public synchronized void resolveDatagram(DatagramPacket receivedDatagram) throws IOException {
     byte[] b = receivedDatagram.getData();
     Packet receivedPacket = new Packet(b);
 
