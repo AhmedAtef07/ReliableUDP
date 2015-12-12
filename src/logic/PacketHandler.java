@@ -9,7 +9,8 @@ import java.net.InetAddress;
  * Created by ahmedatef on 12/6/15.
  */
 public abstract class PacketHandler {
-  public static int CHUNK_SIZE = 2;
+  public static final int PACKET_CHUNK_SIZE = Math.max(2, FileInstance.FILE_CHUNK_SIZE) +
+          Packet.HEADER_LENGTH;
 
   private Thread udpThread;
 
@@ -30,7 +31,7 @@ public abstract class PacketHandler {
           while(true) {
             // Receiving pack expected size must not be less than 2 + header size, as signals are
             // shorts which are 2 bytes.
-            byte[] dataAwaiting = new byte[Math.max(2, CHUNK_SIZE) + Packet.HEADER_LENGTH];
+            byte[] dataAwaiting = new byte[PACKET_CHUNK_SIZE];
             final DatagramPacket receivedDatagram = new DatagramPacket(dataAwaiting,
                     dataAwaiting.length);
 

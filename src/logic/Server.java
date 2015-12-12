@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -19,11 +15,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Server extends PacketHandler {
   private byte[] fileData;
   private final AtomicInteger nextChunkIdToBeSent = new AtomicInteger();
-  private Timer timeoutTimer;
 
   private final DatagramPacket[] diagrams = new DatagramPacket[1];
 
   private final HashSet<Integer> receivedAcks = new HashSet<Integer>();
+  private FileInstance fi;
 
   public Server(int udpPort) throws SocketException {
     super(new DatagramSocket(udpPort), "Server");
@@ -35,7 +31,7 @@ public class Server extends PacketHandler {
     Packet receivedPacket = new Packet(b);
 
     if(receivedPacket.getType() == PacketType.SIGNAL) {
-      switch((Signal)receivedPacket.getBody()) {
+      switch((Signal) receivedPacket.getBody()) {
         case SHAKEHAND_PACKET:
           diagrams[0] = receivedDatagram;
           respond(receivedDatagram, new Packet(PacketType.SIGNAL, 0,
@@ -49,49 +45,38 @@ public class Server extends PacketHandler {
 
       }
     }
-//    respond(receivedDatagram, receivedPacket);
+    //    respond(receivedDatagram, receivedPacket);
   }
 
   private synchronized void sendNextDataChunk(DatagramPacket receivedDatagram) throws IOException {
-    if(nextChunkIdToBeSent.get() * CHUNK_SIZE >= fileData.length) {
-      respond(receivedDatagram, new Packet(PacketType.SIGNAL, 0, Signal.TRANSMISSION_COMPLETED));
-    } else {
+    if(fi.hasNextAfter(nextChunkIdToBeSent.get())) {
       sendChunkNumber(receivedDatagram, nextChunkIdToBeSent.getAndIncrement());
+    } else {
+      respond(receivedDatagram, new Packet(PacketType.SIGNAL, 0, Signal.TRANSMISSION_COMPLETED));
     }
 
   }
 
   private void startFileTransmission(DatagramPacket receivedDatagram) throws IOException {
-    loadFile("/home/ahmedatef/txt_one_line");
+    fi = new FileInstance("/home/ahmedatef/txt_one_line", 1);
     nextChunkIdToBeSent.set(0);
     sendNextDataChunk(receivedDatagram);
   }
 
   private void sendChunkNumber(DatagramPacket receivedDatagram, int chunkNumber)
           throws IOException {
-    Packet packet = new Packet(PacketType.DATA, chunkNumber, getChunk(chunkNumber));
+    Packet packet = new Packet(PacketType.DATA, chunkNumber, fi.getChunk(chunkNumber));
     sendPacket(packet, receivedDatagram.getAddress(), receivedDatagram.getPort());
     scheduleTimeout(1000, chunkNumber);
   }
 
-  private void loadFile(String filePath) throws IOException {
-    Path path = Paths.get(filePath);
-    fileData = Files.readAllBytes(path);
-    log(String.format("Numbers of packets to be sent: %d / %d = %d", fileData.length, CHUNK_SIZE,
-            fileData.length / CHUNK_SIZE));
-  }
-
-  private byte[] getChunk(int chunkNumber) {
-    return Arrays.copyOfRange(fileData, CHUNK_SIZE * chunkNumber,
-            Math.min(fileData.length, CHUNK_SIZE * (chunkNumber + 1)));
-  }
-
   private synchronized void scheduleTimeout(int timeout, final int packetNumber) {
-    timeoutTimer = new Timer();
+    Timer timeoutTimer = new Timer();
     timeoutTimer.schedule(new TimerTask() {
       @Override
       public void run() {
-        System.out.println("____Timer ticked: " + packetNumber + " " + receivedAcks.contains(packetNumber));
+        System.out.println("____Timer ticked: " + packetNumber + " " + receivedAcks.contains
+                (packetNumber));
         if(!receivedAcks.contains(packetNumber)) {
           try {
             sendChunkNumber(diagrams[0], packetNumber);
