@@ -65,7 +65,7 @@ public abstract class PacketHandler {
 
   public synchronized void ackResponse(DatagramPacket receivedDatagram, Packet receivedPacket)
           throws IOException {
-    Packet respondPacket = new Packet(PacketType.SIGNAL, receivedPacket.getPacketNumber(),
+    Packet respondPacket = new Packet(PacketType.SIGNAL, receivedPacket.getPacketId(),
             Signal.PACKET_RECEIVED);
     sendPacket(respondPacket, receivedDatagram.getAddress(), receivedDatagram.getPort());
   }
@@ -80,12 +80,13 @@ public abstract class PacketHandler {
 
     datagramSocket.send(sendPacket);
 
-    log(String.format("Datagram sent to %s:%d of type %s and length %d. Content: %s",
+    log(String.format("Datagram sent to %s:%d #(%02d) of type %s and length %d. Content: %s",
             inetAddress.getHostAddress(),
             port,
+            packet.getPacketId(),
             packet.getType(),
             packet.getRaw().length,
-            packet.getBody().toString()));
+            packet.toString()));
   }
 
   public synchronized void log(String l) {

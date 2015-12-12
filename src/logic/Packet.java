@@ -14,11 +14,18 @@ import java.util.Arrays;
  */
 public class Packet {
 
+  enum State {
+    VIRGIN,
+    AWAITING_RESPONSE,
+    ACK_RECEIVED
+  }
+
   private short length;
   private PacketType type;
-  private int packetNumber;
+  private int packetId;
   private Object body;
   private byte[] raw;
+  private State state = State.VIRGIN;
 
   public static final short HEADER_LENGTH = 8;
 
@@ -26,15 +33,15 @@ public class Packet {
 //    new Packet(type, -1, body);
 //  }
 
-  public Packet(PacketType type, int packetNumber, Object body) {
-    encode(type, packetNumber, body);
+  public Packet(PacketType type, int packetId, Object body) {
+    encode(type, packetId, body);
   }
 
   public Packet(byte[] raw) {
     decode(raw);
   }
 
-  private void encode(PacketType packetType, int packetNumber, Object body) {
+  private void encode(PacketType packetType, int packetId, Object body) {
     short length = HEADER_LENGTH;
     byte[] data = null;
 
@@ -58,11 +65,11 @@ public class Packet {
 
     byteBuffer.putShort(length);
     byteBuffer.putShort((short)packetType.ordinal());
-    byteBuffer.putInt(packetNumber);
+    byteBuffer.putInt(packetId);
     byteBuffer.put(data);
 
     raw = byteBuffer.array();
-    setLocalVariables(length, packetType, packetNumber, body, raw);
+    setLocalVariables(length, packetType, packetId, body, raw);
   }
 
   private void decode(byte[] raw) {
@@ -70,7 +77,7 @@ public class Packet {
 
     short length = bb.getShort();
     PacketType packetType = PacketType.values()[bb.getShort()];
-    int packetNumber = bb.getInt();
+    int packetId = bb.getInt();
 
     Object body = null;
 
@@ -83,14 +90,14 @@ public class Packet {
         break;
     }
 
-    setLocalVariables(length, packetType, packetNumber, body, raw);
+    setLocalVariables(length, packetType, packetId, body, raw);
   }
 
-  private void setLocalVariables(short length, PacketType type, int packetNumber, Object body,
+  private void setLocalVariables(short length, PacketType type, int packetId, Object body,
                                  byte[] raw) {
     this.length = length;
     this.type = type;
-    this.packetNumber = packetNumber;
+    this.packetId = packetId;
     this.body = body;
     this.raw = raw;
   }
@@ -103,8 +110,8 @@ public class Packet {
     return type;
   }
 
-  public int getPacketNumber() {
-    return packetNumber;
+  public int getPacketId() {
+    return packetId;
   }
 
   public Object getBody() {
@@ -113,6 +120,25 @@ public class Packet {
 
   public byte[] getRaw() {
     return raw;
+  }
+
+  @Override
+  public String toString() {
+    switch(type) {
+      case DATA:
+        return new String((byte[])body);
+      case SIGNAL:
+        return ((Signal)body).toString();
+    }
+    return null;
+  }
+
+  public State getState() {
+    return state;
+  }
+
+  public void setState(State state) {
+    this.state = state;
   }
 }
 

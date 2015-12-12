@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.Random;
 import java.util.Vector;
 
 /**
@@ -38,7 +39,7 @@ public class Client extends PacketHandler {
 //      } catch(InterruptedException e) {
 //        e.printStackTrace();
 //      }
-//      if(new Random().nextBoolean()) return;
+      if(new Random().nextBoolean()) return;
       dataPackets.add(receivedPacket);
       str += new String((byte[])receivedPacket.getBody());
 //      System.out.println("## RECEIVED STRING: " + new String((byte[])receivedPacket.getBody()));
@@ -56,6 +57,11 @@ public class Client extends PacketHandler {
           System.out.println();
           respond(receivedDatagram, new Packet(PacketType.SIGNAL, 0,
                   Signal.TRANSMISSION_COMPLETED_RECEIVED));
+          System.out.println();
+          System.out.println();
+          for(Packet p : dataPackets) {
+            System.out.println(new String((byte[])p.getBody()));
+          }
           break;
       }
     }
