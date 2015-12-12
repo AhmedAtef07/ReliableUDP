@@ -62,7 +62,6 @@ public class Packet {
     byteBuffer.put(data);
 
     raw = byteBuffer.array();
-
     setLocalVariables(length, packetType, packetNumber, body, raw);
   }
 

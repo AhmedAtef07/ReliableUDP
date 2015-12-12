@@ -53,14 +53,6 @@ public abstract class PacketHandler {
   }
 
   public abstract void resolveDatagram (DatagramPacket receivedDatagram) throws IOException;
-//  public void resolveDatagram(DatagramPacket receivedDatagram) throws IOException {
-//    byte[] b = receivedDatagram.getData();
-//    Packet receivedPacket = new Packet(b);
-//
-//    if(receivedPacket.getType() == Packet.PacketType.DATA) {
-//      respond(receivedDatagram, receivedPacket);
-//    }
-//  }
 
   public synchronized void respond(DatagramPacket receivedDatagram, Packet newPacket) throws IOException {
 //    new ImageViewer("Received in " + name, (byte[])receivedPacket.getBody());

@@ -11,11 +11,8 @@ public class Main {
     Server server = new Server(7787);
     Thread.sleep(370);
     Client client = new Client("localhost", 7787);
-//    client.sendImageToServer("/home/ahmedatef/img.jpg");
-//    while(true) {
-//      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-//      String s = br.readLine();
-//      client.sendToServer(s);
-//    }
+
+    Thread.sleep(400);
+    client.sendShakeHandPacketToServer();
   }
 }

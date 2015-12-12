@@ -58,7 +58,7 @@ public class Server extends PacketHandler {
   }
 
   private void startFileTransmission(DatagramPacket receivedDatagram) throws IOException {
-    loadFile("/home/ahmedatef/img.jpg");
+    loadFile("/home/ahmedatef/txt");
     sendChunkNumber(receivedDatagram, nextChunkToBeSent++);
   }
 
@@ -77,8 +77,7 @@ public class Server extends PacketHandler {
   }
 
   private byte[] getChunk(int chunkNumber) {
-//    System.out.println(chunkNumber);
-    return Arrays.copyOfRange(fileData, CHUNK_SIZE * chunkNumber, CHUNK_SIZE * (chunkNumber + 1));
+    return Arrays.copyOfRange(fileData, CHUNK_SIZE * chunkNumber, Math.min(fileData.length, CHUNK_SIZE * (chunkNumber + 1)));
   }
 
   private void scheduleTimeout(int timeout) {
