@@ -67,6 +67,7 @@ public class Packet {
 
   private void decode(byte[] raw) {
     ByteBuffer bb = ByteBuffer.wrap(raw);
+
     short length = bb.getShort();
     PacketType packetType = PacketType.values()[bb.getShort()];
     int packetNumber = bb.getInt();

@@ -9,7 +9,7 @@ import java.net.InetAddress;
  * Created by ahmedatef on 12/6/15.
  */
 public abstract class PacketHandler {
-  public static int CHUNK_SIZE = 4 * 1024;
+  public static int CHUNK_SIZE = 2;
 
   private Thread udpThread;
 
@@ -28,7 +28,9 @@ public abstract class PacketHandler {
       public void run() {
         try {
           while(true) {
-            byte[] dataAwaiting = new byte[CHUNK_SIZE + Packet.HEADER_LENGTH];
+            // Receiving pack expected size must not be less than 2 + header size, as signals are
+            // shorts which are 2 bytes.
+            byte[] dataAwaiting = new byte[Math.max(2, CHUNK_SIZE) + Packet.HEADER_LENGTH];
             final DatagramPacket receivedDatagram = new DatagramPacket(dataAwaiting,
                     dataAwaiting.length);
 
@@ -54,7 +56,8 @@ public abstract class PacketHandler {
 
   public abstract void resolveDatagram (DatagramPacket receivedDatagram) throws IOException;
 
-  public synchronized void respond(DatagramPacket receivedDatagram, Packet newPacket) throws IOException {
+  public synchronized void respond(DatagramPacket receivedDatagram, Packet newPacket)
+          throws IOException {
 //    new ImageViewer("Received in " + name, (byte[])receivedPacket.getBody());
     sendPacket(newPacket, receivedDatagram.getAddress(), receivedDatagram.getPort());
   }
@@ -66,12 +69,8 @@ public abstract class PacketHandler {
     sendPacket(respondPacket, receivedDatagram.getAddress(), receivedDatagram.getPort());
   }
 
-  public synchronized void sendPacket(Packet packet, InetAddress inetAddress, int port) throws IOException {
-//    try {
-//      Thread.sleep(1000);
-//    } catch(InterruptedException e) {
-//      e.printStackTrace();
-//    }
+  public synchronized void sendPacket(Packet packet, InetAddress inetAddress, int port)
+          throws IOException {
     DatagramPacket sendPacket = new DatagramPacket(
             packet.getRaw(),
             packet.getRaw().length,

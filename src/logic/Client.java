@@ -14,6 +14,7 @@ public class Client extends PacketHandler {
   private int port;
 
   private Vector<Packet> dataPackets;
+  private String str;
 
   public Client(String serverName, int port) throws IOException, InterruptedException {
     super(new DatagramSocket(), "Client");
@@ -31,8 +32,16 @@ public class Client extends PacketHandler {
     Packet receivedPacket = new Packet(b);
 
     if(receivedPacket.getType() == PacketType.DATA) {
+//      if(true) return;
+//      try {
+//        Thread.sleep(500);
+//      } catch(InterruptedException e) {
+//        e.printStackTrace();
+//      }
+//      if(new Random().nextBoolean()) return;
       dataPackets.add(receivedPacket);
-      log("## RECEIVED STRING: " + new String((byte[])receivedPacket.getBody()));
+      str += new String((byte[])receivedPacket.getBody());
+//      System.out.println("## RECEIVED STRING: " + new String((byte[])receivedPacket.getBody()));
       ackResponse(receivedDatagram, receivedPacket);
     }
 
@@ -42,7 +51,11 @@ public class Client extends PacketHandler {
           initDataPackets();
           break;
         case TRANSMISSION_COMPLETED:
-          respond(receivedDatagram, new Packet(PacketType.SIGNAL, 0, Signal.TRANSMISSION_COMPLETED_RECEIVED));
+          System.out.println();
+          System.out.println("The whole sentence: '" + str +  "'");
+          System.out.println();
+          respond(receivedDatagram, new Packet(PacketType.SIGNAL, 0,
+                  Signal.TRANSMISSION_COMPLETED_RECEIVED));
           break;
       }
     }
@@ -50,5 +63,6 @@ public class Client extends PacketHandler {
 
   private void initDataPackets() throws IOException {
     dataPackets = new Vector<Packet>();
+    str = "";
   }
 }
