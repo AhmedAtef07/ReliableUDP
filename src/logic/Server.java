@@ -30,15 +30,6 @@ public abstract class Server extends PacketHandler {
     transmissionCompleted = true;
   }
 
-//  public synchronized void trySendNextDataChunkOf(int chunkId) throws IOException {
-//    log("____THIS ID: " + chunkId + " hasNextValue? " + fi.hasNextAfter(chunkId));
-//    if(fi.hasNextAfter(chunkId)) {
-//      sendChunk(chunkId + 1);
-//    } else if(countOfStateInVps(PacketState.ACK_RECEIVED) == fi.getChunkCount()) {
-//      sendFileTransmissionCompleted();
-//    }
-//  }
-
   public synchronized int countOfStateInVps(PacketState packetState) {
     int ackCount = 0;
     for(PacketState ps : vps) {
@@ -93,8 +84,6 @@ public abstract class Server extends PacketHandler {
     timeoutTimer.schedule(new TimerTask() {
       @Override
       public void run() {
-//        System.out.println("____Timer ticked: " + packetNumber + " " + receivedAcks.contains
-//                (packetNumber));
         if(vps.get(chunkId) == PacketState.AWAITING_RESPONSE) {
           try {
             System.out.println("______Timer resending packet number: " + chunkId);

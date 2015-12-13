@@ -24,7 +24,6 @@ public class FileInstance {
     length = fis.getChannel().size();
     data = new byte[(int) length];
     fis.read(data, 0, (int) length);
-//    chunkCount = data.length / FILE_CHUNK_SIZE + (data.length % FILE_CHUNK_SIZE == 0 ? 1 : 0);
     chunkCount = (int) Math.ceil((double) data.length / FILE_CHUNK_SIZE);
     System.out.println(String.format("Numbers of packets to be sent: %d / %d = %d",
             data.length, FILE_CHUNK_SIZE,
@@ -37,7 +36,6 @@ public class FileInstance {
 
   public boolean chunkExists(int chunkId) {
     return chunkId < chunkCount;
-//    return (chunkId) * FILE_CHUNK_SIZE < length;
   }
 
   public byte[] getChunk(int chunkId) {
