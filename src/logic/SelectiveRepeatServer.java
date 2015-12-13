@@ -9,11 +9,10 @@ import java.net.SocketException;
  */
 public class SelectiveRepeatServer extends Server {
 
-
   private int windowSize;
 
-  public SelectiveRepeatServer(int udpPort, int windowSize) throws SocketException {
-    super(udpPort);
+  public SelectiveRepeatServer(int udpPort, int windowSize, int lossProbability) throws SocketException {
+    super(udpPort, lossProbability);
     this.windowSize = windowSize;
   }
 

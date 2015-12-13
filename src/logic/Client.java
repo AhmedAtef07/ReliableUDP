@@ -1,9 +1,11 @@
 package logic;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Random;
 import java.util.Vector;
 
@@ -16,6 +18,10 @@ public class Client extends PacketHandler {
 
   private Vector<Packet> dataPackets;
   private String str;
+
+  private FileOutputStream fos;
+  private int expectedOrderedChunkId;
+  private String outputFileName;
 
   public Client(String serverName, int port) throws IOException, InterruptedException {
     super(new DatagramSocket(), "Client");
@@ -39,10 +45,8 @@ public class Client extends PacketHandler {
 //      } catch(InterruptedException e) {
 //        e.printStackTrace();
 //      }
-      if(new Random().nextInt(2) == 0) return;
+//      if(new Random().nextInt(2) == 0) return;
       dataPackets.add(receivedPacket);
-      str += new String((byte[])receivedPacket.getBody());
-//      System.out.println("## RECEIVED STRING: " + new String((byte[])receivedPacket.getBody()));
       ackResponse(receivedDatagram, receivedPacket);
     }
 
@@ -52,23 +56,42 @@ public class Client extends PacketHandler {
           initDataPackets();
           break;
         case TRANSMISSION_COMPLETED:
-          System.out.println();
-          System.out.println("The whole sentence: '" + str +  "'");
-          System.out.println();
           respond(receivedDatagram, new Packet(PacketType.SIGNAL, 0,
                   Signal.TRANSMISSION_COMPLETED_RECEIVED));
-          System.out.println();
-          System.out.println();
+          Collections.sort(dataPackets, new Comparator<Packet>() {
+            @Override
+            public int compare(Packet o1, Packet o2) {
+              return o1.getPacketId() - o2.getPacketId();
+            }
+          });
           for(Packet p : dataPackets) {
-            System.out.println(new String((byte[])p.getBody()));
+            appendToFile((byte[])p.getBody());
           }
+          closeFile();
           break;
       }
     }
   }
 
   private void initDataPackets() throws IOException {
+    outputFileName = "received_file_" + new Random().nextInt(20) + "_" + new Random().nextInt(20);
+    generateFile(outputFileName);
+    expectedOrderedChunkId = 0;
     dataPackets = new Vector<Packet>();
-    str = "";
+  }
+
+  private void generateFile(String fileName) throws FileNotFoundException {
+    fos = new FileOutputStream(fileName);
+  }
+
+  private synchronized void appendToFile(byte[] data) throws IOException {
+    fos.write(data);
+  }
+
+  private void closeFile() throws IOException {
+    fos.flush();
+    fos.close();
+    System.out.println(outputFileName);
+    System.out.println(new BufferedReader(new FileReader(new File(outputFileName))).readLine());
   }
 }

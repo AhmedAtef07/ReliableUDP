@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
@@ -12,7 +13,7 @@ import java.util.Vector;
  * Created by ahmedatef on 11/29/15.
  */
 public abstract class Server extends PacketHandler {
-  private byte[] fileData;
+  private int lossProbability;
 
   public final DatagramPacket[] diagrams = new DatagramPacket[1];
   public FileInstance fi;
@@ -21,8 +22,9 @@ public abstract class Server extends PacketHandler {
 
   boolean transmissionCompleted = false;
 
-  public Server(int udpPort) throws SocketException {
+  public Server(int udpPort, int lossProbability) throws SocketException {
     super(new DatagramSocket(udpPort), "Server");
+    this.lossProbability = Math.min(lossProbability, 2);
   }
 
   public synchronized void sendFileTransmissionCompleted() throws IOException {
@@ -74,7 +76,9 @@ public abstract class Server extends PacketHandler {
           throws IOException {
     if(transmissionCompleted) return;
     Packet packet = new Packet(PacketType.DATA, chunkId, fi.getChunk(chunkId));
-    sendPacket(packet, diagrams[0].getAddress(), diagrams[0].getPort());
+    if(new Random().nextInt(lossProbability) != 0) {
+      sendPacket(packet, diagrams[0].getAddress(), diagrams[0].getPort());
+    }
     if(vps.get(chunkId) == PacketState.VIRGIN) vps.set(chunkId, PacketState.AWAITING_RESPONSE);
     scheduleTimeout(1000, chunkId);
   }
