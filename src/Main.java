@@ -9,7 +9,7 @@ import java.io.IOException;
 public class Main {
   public static void main(String[] args) throws InterruptedException, IOException {
 //    Server server = new Server(7787);
-    new SelectiveRepeatServer(7787, 3, 2);
+    new SelectiveRepeatServer(7787, 3, 2, 1000);
 //    new StopAndWaitServer(7787, 2);
     Thread.sleep(370);
     Client client = new Client("localhost", 7787);

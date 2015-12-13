@@ -11,8 +11,9 @@ public class SelectiveRepeatServer extends Server {
 
   private int windowSize;
 
-  public SelectiveRepeatServer(int udpPort, int windowSize, int lossProbability) throws SocketException {
-    super(udpPort, lossProbability);
+  public SelectiveRepeatServer(int udpPort, int windowSize, int lossProbability, int timeout)
+          throws SocketException {
+    super(udpPort, lossProbability, timeout);
     this.windowSize = windowSize;
   }
 
@@ -68,5 +69,13 @@ public class SelectiveRepeatServer extends Server {
     for(int i = 0; i < windowSize; ++i) {
       sendChunk(i);
     }
+  }
+
+  public synchronized int startOfWindow() {
+    int ackCount = -1;
+    for(int i = 0; i < vps.size(); ++i) {
+      if(vps.get(i) != PacketState.ACK_RECEIVED) return i;
+    }
+    return ackCount;
   }
 }

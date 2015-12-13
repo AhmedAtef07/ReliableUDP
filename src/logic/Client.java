@@ -39,19 +39,22 @@ public class Client extends PacketHandler {
     Packet receivedPacket = new Packet(b);
 
     if(receivedPacket.getType() == PacketType.DATA) {
-//      if(true) return;
-//      try {
-//        Thread.sleep(100);
-//      } catch(InterruptedException e) {
-//        e.printStackTrace();
-//      }
-//      if(new Random().nextInt(2) == 0) return;
+      //      if(true) return;
+      //      try {
+      //        Thread.sleep(100);
+      //      } catch(InterruptedException e) {
+      //        e.printStackTrace();
+      //      }
+      //      if(new Random().nextInt(2) == 0) return;
+      for(Packet p : dataPackets) {
+        if(p.getPacketId() == receivedPacket.getPacketId()) return;
+      }
       dataPackets.add(receivedPacket);
       ackResponse(receivedDatagram, receivedPacket);
     }
 
     if(receivedPacket.getType() == PacketType.SIGNAL) {
-      switch((Signal)receivedPacket.getBody()) {
+      switch((Signal) receivedPacket.getBody()) {
         case STARTING_IMAGE_TRANSMISSION:
           initDataPackets();
           break;
@@ -65,7 +68,7 @@ public class Client extends PacketHandler {
             }
           });
           for(Packet p : dataPackets) {
-            appendToFile((byte[])p.getBody());
+            appendToFile((byte[]) p.getBody());
           }
           closeFile();
           break;

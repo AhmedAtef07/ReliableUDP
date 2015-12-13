@@ -14,6 +14,7 @@ import java.util.Vector;
  */
 public abstract class Server extends PacketHandler {
   private int lossProbability;
+  private int timeout;
 
   public final DatagramPacket[] diagrams = new DatagramPacket[1];
   public FileInstance fi;
@@ -22,9 +23,10 @@ public abstract class Server extends PacketHandler {
 
   boolean transmissionCompleted = false;
 
-  public Server(int udpPort, int lossProbability) throws SocketException {
+  public Server(int udpPort, int lossProbability, int timeout) throws SocketException {
     super(new DatagramSocket(udpPort), "Server");
     this.lossProbability = Math.min(lossProbability, 2);
+    this.timeout = timeout;
   }
 
   public synchronized void sendFileTransmissionCompleted() throws IOException {
@@ -56,14 +58,6 @@ public abstract class Server extends PacketHandler {
     return ackCount;
   }
 
-  public synchronized int startOfWindow() {
-    int ackCount = -1;
-    for(int i = 0; i < vps.size(); ++i) {
-      if(vps.get(i) != PacketState.ACK_RECEIVED) return i;
-    }
-    return ackCount;
-  }
-
   public synchronized void trySendChunk(int chunkId) throws IOException {
     if(fi.chunkExists(chunkId)) {
       sendChunk(chunkId);
@@ -80,7 +74,7 @@ public abstract class Server extends PacketHandler {
       sendPacket(packet, diagrams[0].getAddress(), diagrams[0].getPort());
     }
     if(vps.get(chunkId) == PacketState.VIRGIN) vps.set(chunkId, PacketState.AWAITING_RESPONSE);
-    scheduleTimeout(1000, chunkId);
+    scheduleTimeout(timeout, chunkId);
   }
 
   private synchronized void scheduleTimeout(int timeout, final int chunkId) {
