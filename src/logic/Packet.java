@@ -14,18 +14,11 @@ import java.util.Arrays;
  */
 public class Packet {
 
-  enum State {
-    VIRGIN,
-    AWAITING_RESPONSE,
-    ACK_RECEIVED
-  }
-
   private short length;
   private PacketType type;
   private int packetId;
   private Object body;
   private byte[] raw;
-  private State state = State.VIRGIN;
 
   public static final short HEADER_LENGTH = 8;
 
@@ -131,14 +124,6 @@ public class Packet {
         return ((Signal)body).toString();
     }
     return null;
-  }
-
-  public State getState() {
-    return state;
-  }
-
-  public void setState(State state) {
-    this.state = state;
   }
 }
 

@@ -8,7 +8,7 @@ import java.util.Arrays;
  * Created by ahmedatef on 12/12/15.
  */
 public class FileInstance {
-  public static final int FILE_CHUNK_SIZE = 5; // In bytes.
+  public static final int FILE_CHUNK_SIZE = 2; // In bytes.
 
   private String path;
   private byte[] data;
@@ -36,7 +36,8 @@ public class FileInstance {
   }
 
   public boolean chunkExists(int chunkId) {
-    return (chunkId) * FILE_CHUNK_SIZE < length;
+    return chunkId < chunkCount;
+//    return (chunkId) * FILE_CHUNK_SIZE < length;
   }
 
   public byte[] getChunk(int chunkId) {

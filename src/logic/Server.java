@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
-import java.util.*;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.Vector;
 
 /**
  * Created by ahmedatef on 11/29/15.
@@ -15,8 +17,7 @@ public abstract class Server extends PacketHandler {
   public final DatagramPacket[] diagrams = new DatagramPacket[1];
   public FileInstance fi;
 
-  public final PriorityQueue<Integer> windowIds = new PriorityQueue<Integer>();
-  public final Vector<Integer> receivedAcks = new Vector<Integer>();
+  public final Vector<PacketState> vps = new Vector<PacketState>();
 
   boolean transmissionCompleted = false;
 
@@ -29,29 +30,61 @@ public abstract class Server extends PacketHandler {
     transmissionCompleted = true;
   }
 
-  public synchronized void trySendNextDataChunkOf(int chunkId) throws IOException {
-    log("____THIS ID: " + chunkId + " hasNextValue? " + fi.hasNextAfter(chunkId));
-    if(fi.hasNextAfter(chunkId)) {
-      sendChunk(chunkId + 1);
-    } else if(receivedAcks.size() == fi.getChunkCount()) {
-      sendFileTransmissionCompleted();
+//  public synchronized void trySendNextDataChunkOf(int chunkId) throws IOException {
+//    log("____THIS ID: " + chunkId + " hasNextValue? " + fi.hasNextAfter(chunkId));
+//    if(fi.hasNextAfter(chunkId)) {
+//      sendChunk(chunkId + 1);
+//    } else if(countOfStateInVps(PacketState.ACK_RECEIVED) == fi.getChunkCount()) {
+//      sendFileTransmissionCompleted();
+//    }
+//  }
+
+  public synchronized int countOfStateInVps(PacketState packetState) {
+    int ackCount = 0;
+    for(PacketState ps : vps) {
+      if(ps == packetState) ackCount++;
     }
+    return ackCount;
+  }
+
+  public void printVps() {
+    String s = "";
+    for(int i = 0; i < vps.size(); ++i) {
+      s += vps.get(i) + ", ";
+    }
+    System.out.println(s);
+  }
+
+  public int firstIndexOfState(PacketState packetState) {
+    int ackCount = -1;
+    for(int i = 0; i < vps.size(); ++i) {
+      if(vps.get(i) == packetState) return i;
+    }
+    return ackCount;
+  }
+
+  public synchronized int startOfWindow() {
+    int ackCount = -1;
+    for(int i = 0; i < vps.size(); ++i) {
+      if(vps.get(i) != PacketState.ACK_RECEIVED) return i;
+    }
+    return ackCount;
   }
 
   public synchronized void trySendChunk(int chunkId) throws IOException {
     if(fi.chunkExists(chunkId)) {
       sendChunk(chunkId);
-    } else if(receivedAcks.size() == fi.getChunkCount()) {
+    } else if(countOfStateInVps(PacketState.ACK_RECEIVED) == fi.getChunkCount()) {
       sendFileTransmissionCompleted();
     }
   }
 
-  public void sendChunk(int chunkId)
+  public synchronized void sendChunk(int chunkId)
           throws IOException {
     if(transmissionCompleted) return;
     Packet packet = new Packet(PacketType.DATA, chunkId, fi.getChunk(chunkId));
     sendPacket(packet, diagrams[0].getAddress(), diagrams[0].getPort());
-    if(!windowIds.contains(chunkId)) windowIds.add(chunkId);
+    if(vps.get(chunkId) == PacketState.VIRGIN) vps.set(chunkId, PacketState.AWAITING_RESPONSE);
     scheduleTimeout(1000, chunkId);
   }
 
@@ -62,9 +95,9 @@ public abstract class Server extends PacketHandler {
       public void run() {
 //        System.out.println("____Timer ticked: " + packetNumber + " " + receivedAcks.contains
 //                (packetNumber));
-        if(!receivedAcks.contains(chunkId)) {
+        if(vps.get(chunkId) == PacketState.AWAITING_RESPONSE) {
           try {
-            System.out.println("_____ Timer resending packet number: " + chunkId);
+            System.out.println("______Timer resending packet number: " + chunkId);
             sendChunk(chunkId);
           } catch(IOException e) {
             e.printStackTrace();

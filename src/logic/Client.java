@@ -35,11 +35,11 @@ public class Client extends PacketHandler {
     if(receivedPacket.getType() == PacketType.DATA) {
 //      if(true) return;
 //      try {
-//        Thread.sleep(500);
+//        Thread.sleep(100);
 //      } catch(InterruptedException e) {
 //        e.printStackTrace();
 //      }
-      if(new Random().nextBoolean()) return;
+      if(new Random().nextInt(2) == 0) return;
       dataPackets.add(receivedPacket);
       str += new String((byte[])receivedPacket.getBody());
 //      System.out.println("## RECEIVED STRING: " + new String((byte[])receivedPacket.getBody()));

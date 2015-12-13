@@ -32,8 +32,8 @@ public class SelectiveRepeatServer extends Server {
           startFileTransmission(receivedDatagram);
           break;
         case PACKET_RECEIVED:
-          if(!receivedAcks.contains(packet.getPacketId())) {
-            receivedAcks.add(packet.getPacketId());
+          System.out.println(packet.getPacketId() + " " + vps.get(packet.getPacketId()));
+          if(vps.get(packet.getPacketId()) == PacketState.AWAITING_RESPONSE) {
             slideWindow(packet.getPacketId());
           }
           break;
@@ -42,53 +42,39 @@ public class SelectiveRepeatServer extends Server {
   }
 
   public synchronized void slideWindow(int chunkId) throws IOException {
-    System.out.println(String.format("IN SLIDE WINDOW_______________________" +
-            "%d %d || %d %d || %s || %s", receivedAcks.size(), fi.getChunkCount(), windowIds.peek(),
-            chunkId, getWindowSizeElements(), getAckResponses()));
-    if(receivedAcks.size() == fi.getChunkCount()) {
+    System.out.println("I am the SLIDING WINODW YOU HAV EBEEN DSERAHCING FOR ME !! " +
+            countOfStateInVps(PacketState.ACK_RECEIVED) + " " + fi.getChunkCount());
+
+    if(countOfStateInVps(PacketState.ACK_RECEIVED) + 1 == fi.getChunkCount()) {
+      System.out.println("HEREHERHEHER");
       sendFileTransmissionCompleted();
       return;
     }
 
-    if(windowIds.peek() == chunkId) {
-      windowIds.remove(chunkId);
-      for(int i = 0; i < windowSize; ++i) {
-        int sow = 0;
-        if(windowIds.isEmpty()) sow = receivedAcks.lastElement() + 1;
-        else sow = windowIds.peek();
+    int sow = startOfWindow();
 
-        if(!windowIds.contains(i + sow)) {
-          System.out.println("____TRYING TO SEND ======================> " + (i + sow));
-          trySendChunk(i + sow);
+    vps.set(chunkId, PacketState.ACK_RECEIVED);
+    printVps();
+
+    if(sow == chunkId) {
+      System.out.println("~~ THis is SOW: " + sow);
+      int newSow = startOfWindow();
+      for(int i = 0; i < windowSize + 1 && (i + newSow) < vps.size(); ++i) {
+        System.out.println("-_-_-_-_-_-_-_--_---___---_-TRYING TO SEND CHUNK ID " + (i + newSow) + " " + vps.get(i + newSow));
+        if(vps.get(i + newSow) == PacketState.VIRGIN) {
+          System.out.println("____TRYING TO SEND ======================> " + (i + newSow));
+          trySendChunk(i + newSow);
         }
       }
-    } else {
-      windowIds.remove(chunkId);
     }
-    //    windowIds.remove(chunkId);
-    //    trySendNextDataChunkOf(chunkId + windowSize);
-  }
 
-  private String getWindowSizeElements() {
-    String s = "";
-    Object[] os = windowIds.toArray();
-    for(Object o : os) {
-      s += o + ", " ;
-    }
-    return s;
-  }
-
-  private String getAckResponses() {
-    String s = "";
-    Object[] os = receivedAcks.toArray();
-    for(Object o : os) {
-      s += o + ", " ;
-    }
-    return s;
   }
 
   public void startFileTransmission(DatagramPacket receivedDatagram) throws IOException {
     fi = new FileInstance("/home/ahmedatef/txt_one_line", windowSize);
+    for(int i = 0; i < fi.getChunkCount(); ++i) {
+      vps.add(PacketState.VIRGIN);
+    }
     diagrams[0] = receivedDatagram;
     for(int i = 0; i < windowSize; ++i) {
       sendChunk(i);
