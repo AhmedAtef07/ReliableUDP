@@ -7,7 +7,7 @@ import java.util.Arrays;
  * Created by ahmedatef on 12/12/15.
  */
 public class FileInstance {
-  public static final int FILE_CHUNK_SIZE = 5; // In bytes.
+  public static final int FILE_CHUNK_SIZE = 1024; // In bytes.
 
   private String path;
   private byte[] data;

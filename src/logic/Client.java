@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Random;
@@ -13,15 +14,16 @@ import java.util.Vector;
  * Created by ahmedatef on 11/29/15.
  */
 public class Client extends PacketHandler {
+  private ImageViewer imageViewer;
+
   private InetAddress serverAddress;
   private int port;
 
-  private Vector<Packet> dataPackets;
+  public Vector<Packet> dataPackets;
   private String str;
 
   private FileOutputStream fos;
-  private int expectedOrderedChunkId;
-  private String outputFileName;
+  public String outputFileName;
 
   public Client(String serverName, int port) throws IOException, InterruptedException {
     super(new DatagramSocket(), "Client");
@@ -39,17 +41,14 @@ public class Client extends PacketHandler {
     Packet receivedPacket = new Packet(b);
 
     if(receivedPacket.getType() == PacketType.DATA) {
-      //      if(true) return;
-      //      try {
-      //        Thread.sleep(100);
-      //      } catch(InterruptedException e) {
-      //        e.printStackTrace();
-      //      }
-      //      if(new Random().nextInt(2) == 0) return;
       for(Packet p : dataPackets) {
         if(p.getPacketId() == receivedPacket.getPacketId()) return;
       }
       dataPackets.add(receivedPacket);
+
+      //      if(true) return;
+
+      //      if(new Random().nextInt(2) == 0) return;
       ackResponse(receivedDatagram, receivedPacket);
     }
 
@@ -76,22 +75,37 @@ public class Client extends PacketHandler {
     }
   }
 
-  private void initDataPackets() throws IOException {
+  private void updateImage() throws IOException {
+    int receivedLength = 0;
+    for(Packet p : dataPackets) {
+      receivedLength += ((byte[])p.getBody()).length;
+    }
+    ByteBuffer bb = ByteBuffer.allocate(receivedLength);
+    System.out.println(receivedLength);
+
+    for(Packet p : dataPackets) {
+      bb.put((byte[])p.getBody());
+    }
+
+    //    imageViewer.setImageData(bb.array(), "[" + titleInfo + "]");
+    imageViewer.setImageData(bb.array());
+  }
+
+  public void initDataPackets() throws IOException {
     outputFileName = "received_file_" + new Random().nextInt(20) + "_" + new Random().nextInt(20);
     generateFile(outputFileName);
-    expectedOrderedChunkId = 0;
     dataPackets = new Vector<Packet>();
   }
 
-  private void generateFile(String fileName) throws FileNotFoundException {
+  public void generateFile(String fileName) throws FileNotFoundException {
     fos = new FileOutputStream(fileName);
   }
 
-  private synchronized void appendToFile(byte[] data) throws IOException {
+  public synchronized void appendToFile(byte[] data) throws IOException {
     fos.write(data);
   }
 
-  private void closeFile() throws IOException {
+  public void closeFile() throws IOException {
     fos.flush();
     fos.close();
     System.out.println(outputFileName);

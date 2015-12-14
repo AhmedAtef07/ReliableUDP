@@ -3,6 +3,7 @@ package logic;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.SocketException;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -29,6 +30,7 @@ public class GoBackNServer extends Server {
     if(packet.getType() == PacketType.SIGNAL) {
       switch((Signal) packet.getBody()) {
         case TRANSMISSION_COMPLETED_RECEIVED:
+          transmissionTime = System.currentTimeMillis() - transmissionTime;
           break;
         case SHAKEHAND_PACKET:
           diagrams[0] = receivedDatagram;
@@ -54,57 +56,74 @@ public class GoBackNServer extends Server {
     for(int i = 0; i <= chunkId; ++i) {
       vps.set(i, PacketState.ACK_RECEIVED);
     }
-
-    for(int i = 1; i < windowSize + 2 && (i + chunkId) < vps.size(); ++i) {
-      if(vps.get(i + chunkId) == PacketState.VIRGIN) {
-        trySendChunk(i + chunkId);
-      }
-    }
-
     reschedule(chunkId + 1);
+    for(int i = 1; i < windowSize + 2 && (i + chunkId) < vps.size(); ++i) {
+        trySendChunk(i + chunkId);
+    }
   }
 
-  private void reschedule(final int chunkId) {
+  private synchronized void reschedule(final int chunkId) {
     timer.reschedule(new Runnable() {
       @Override
       public void run() {
-        if(vps.get(chunkId) == PacketState.AWAITING_RESPONSE) {
-          for(int i = 0; i < windowSize + 1 && (i + chunkId) < vps.size(); ++i) {
-            try {
-              trySendChunk(i + chunkId);
-            } catch(IOException e) {
-              e.printStackTrace();
-            }
+        for(int i = 0; i < windowSize && (i + chunkId) < vps.size(); ++i) {
+          try {
+            trySendChunk(i + chunkId);
+          } catch(IOException e) {
+            e.printStackTrace();
           }
         }
+        reschedule(chunkId + 1);
+
       }
     });
   }
 
+  public synchronized void trySendChunk(int chunkId) throws IOException {
+    if(fi.chunkExists(chunkId)) {
+      sendChunk(chunkId);
+    } else if(countOfStateInVps(PacketState.ACK_RECEIVED) == fi.getChunkCount()) {
+      sendFileTransmissionCompleted();
+    }
+  }
+
+  public synchronized void sendChunk(int chunkId)
+          throws IOException {
+    if(transmissionCompleted) return;
+    Packet packet = new Packet(PacketType.DATA, chunkId, fi.getChunk(chunkId));
+    if(true || new Random().nextInt(lossProbability) != 0) {
+      sendPacket(packet, diagrams[0].getAddress(), diagrams[0].getPort());
+    }
+    if(vps.get(chunkId) == PacketState.VIRGIN) vps.set(chunkId, PacketState.AWAITING_RESPONSE);
+    reschedule(chunkId);
+  }
+
   public void startFileTransmission(DatagramPacket receivedDatagram) throws IOException {
-    fi = new FileInstance("/home/ahmedatef/txt_one_line", windowSize);
+    fi = new FileInstance("/home/ahmedatef/img.jpg", windowSize);
     for(int i = 0; i < fi.getChunkCount(); ++i) {
       vps.add(PacketState.VIRGIN);
-    }
-    diagrams[0] = receivedDatagram;
-    for(int i = 0; i < windowSize; ++i) {
-      sendChunk(i);
     }
 
     timer.schedule(new Runnable() {
       @Override
       public void run() {
-        if(vps.get(0) == PacketState.AWAITING_RESPONSE) {
-          for(int i = 0; i < windowSize + 1 && (i) < vps.size(); ++i) {
-            try {
-              trySendChunk(i);
-            } catch(IOException e) {
-              e.printStackTrace();
-            }
+        System.out.println("____________TIMER TICKED");
+        for(int i = 0; i < windowSize && (i) < vps.size(); ++i) {
+          try {
+            trySendChunk(i);
+          } catch(IOException e) {
+            e.printStackTrace();
           }
         }
       }
     });
+
+    diagrams[0] = receivedDatagram;
+    for(int i = 0; i < windowSize; ++i) {
+      sendChunk(i);
+    }
+
+//    System.out.println("TIMER MADE");
   }
 
   class ReschedulableTimer extends Timer {
